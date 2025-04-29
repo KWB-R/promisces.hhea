@@ -1,0 +1,17 @@
+case_studies
+#data
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+venv/
+
+# IDE
+.idea
+.vscode
+
+*.pickle
+*.xlsx
