@@ -56,7 +56,7 @@ promisces/
   ...
 ```
 
-> Note: the required data is not part of the git repository and must be requested by {{{?}}}  
+> Note: the required data is not part of the git repository and must be requested by emailing malte.zamzow<at>kompetenz-wasser.de  
 
 ## Usage
 
