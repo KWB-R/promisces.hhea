@@ -1,6 +1,6 @@
-# promisces.hhra
+# promisces.hhea
 
-Human Health Risk Assessment (HHRA) for Project PROMISCES
+Human Health Exposure Assessment (HHEA) for Project PROMISCES
 
 ## Installation
 
