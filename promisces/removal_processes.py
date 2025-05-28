@@ -1,4 +1,5 @@
 import dataclasses as dtc
+from asyncio.windows_events import INFINITE
 from enum import Enum
 from numpy.random import choice
 
@@ -82,25 +83,25 @@ def apply_generic_process(
     cs_rmv_factor, cs_lkl = to_likelihood(rmv_values=cs_rmv,
                                           rmv_factor_resolution=rmv_factor_resolution)
 
-    # print(lit_rmv_factor)
-    # print(cs_rmv_factor)
+    # print(lit_lkl)
+    # print(cs_lkl)
     prior_probs = prior_beta(power=power, rmv_factor_resolution=rmv_factor_resolution)
     probs_both = lit_lkl * cs_lkl
     posterior = probs_both * prior_probs
     posterior /= sum(posterior)
 
-    posterior_max = cs_rmv_factor[posterior.argmax()]
+    posterior_max: object = cs_rmv_factor[posterior.argmax()]
     max_cs_prob = (cs_lkl == cs_lkl.max()).nonzero()[0]
-    cs_max = cs_rmv_factor[cs_lkl.argmax()] if len(max_cs_prob) == 1 else 100
+    cs_max = cs_rmv_factor[cs_lkl.argmax()] if len(max_cs_prob) == 1 else 1000 # needs to be outside removal factor range
     max_lit_prob = (lit_lkl == lit_lkl.max()).nonzero()[0]
-    lit_max = lit_rmv_factor[lit_lkl.argmax()] if len(max_lit_prob) == 1 else 100
+    lit_max = lit_rmv_factor[lit_lkl.argmax()] if len(max_lit_prob) == 1 else 1000
 
-    if abs(cs_max - posterior_max) < 0.05:
+    if abs(cs_max - posterior_max) < 0.05 * 100:
         dominant_distribution = DominantDistribution.case_study
-    elif abs(lit_max - posterior_max) < 0.05:
+    elif abs(lit_max - posterior_max) < 0.05 * 100:
         dominant_distribution = DominantDistribution.literature
-    elif (posterior_max <= (0 + 1 / rmv_factor_resolution)) | (
-            posterior_max >= (1 - 1 / rmv_factor_resolution)):
+    elif (posterior_max <= (0 + 1 / rmv_factor_resolution * 100)) | (
+            posterior_max >= (1 - 1 / rmv_factor_resolution * 100)):
         dominant_distribution = DominantDistribution.prior
     else:
         dominant_distribution = DominantDistribution.combination
@@ -128,10 +129,14 @@ def apply_generic_process(
     else:
         av_out = True
 
+    # TODO: CHECK SORTING
+    input_c = np.sort(input_c)[::-1]
     output_c = input_c * (1 - rmv_factor / 100)
+
     return ProcessResult(
         ProcessType.generic,
-        output_c,
+        # TODO: CHECK SORTING
+        np.sort(output_c)[::-1], # not needed for calculations
         rmv_factor,
         dominant_distribution,
         av_out
@@ -142,9 +147,9 @@ def apply_mixture_process(
         input_c,
         x2_mean,
         x2_sd,
-        c2_mean=0,
-        c2_sd=0,
-        log_dist = False) -> ProcessResult:
+        c2_mean,
+        c2_sd,
+        log_dist=False) -> ProcessResult:
     """
     calculates the substance concentration after a mixture process of the main stream into a diluting liquid.
     """
@@ -179,12 +184,11 @@ def apply_mixture_process(
                 size=n_runs
             )
 
-
     output_c = input_c * (1 - x2_dist) + c2_dist * x2_dist
     rmv_factor = (1 - output_c / input_c) * 100
     return ProcessResult(
         ProcessType.mixture,
-        output_c,
+        np.sort(output_c)[::-1],
         rmv_factor,
         DominantDistribution.case_study,
         average_out=True
@@ -192,7 +196,7 @@ def apply_mixture_process(
 
 
 # case study specific data of separation processes are saved and loaded with "mixture" functions
-def apply_separation_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> ProcessResult:
+def apply_separation_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd, distribution) -> ProcessResult:
     """
     calculates the substance concentration after a mixture process of the main stream into a diluting liquid.
     """
@@ -201,7 +205,7 @@ def apply_separation_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> Process
     if x2_sd == 0:
         x2_dist = np.array([x2_mean] * n_runs)
     else:
-        x2_dist = truncnorm.rvs(
+        x2_dist = distribution.rvs(
             a=(0 - x2_mean) / x2_sd,
             b=(1 - x2_mean) / x2_sd,
             loc=x2_mean,
@@ -212,7 +216,7 @@ def apply_separation_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> Process
     if c2_sd == 0:
         c2_dist = np.array([c2_mean] * n_runs)
     else:
-        c2_dist = truncnorm.rvs(
+        c2_dist = distribution.rvs(
             a=(0 - c2_mean) / c2_sd,  # lower limit is 0
             b=(input_c - c2_mean) / c2_sd,  # the upper limit is the concentration of the inlet
             loc=c2_mean,
@@ -224,7 +228,7 @@ def apply_separation_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> Process
     rmv_factor = (1 - output_c / input_c) * 100
     return ProcessResult(
         ProcessType.mixture,
-        output_c,
+        np.sort(output_c)[::-1],
         rmv_factor,
         DominantDistribution.case_study,
         average_out=True
@@ -268,7 +272,7 @@ def apply_separation_sludge_process(
     rmv_factor = (1 - output_c / input_c) * 100
     return ProcessResult(
         ProcessType.separation_sludge,
-        output_c,
+        np.sort(output_c)[::-1],
         rmv_factor,
         result.dominant_distribution,
         result.average_out
