@@ -3,7 +3,7 @@ from enum import Enum
 from numpy.random import choice
 
 import numpy as np
-from scipy.stats import norm, beta, truncnorm
+from scipy.stats import norm, beta, truncnorm, lognorm
 
 from promisces.models.removal_percent import RemovalPercent
 
@@ -138,7 +138,13 @@ def apply_generic_process(
     )
 
 
-def apply_mixture_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> ProcessResult:
+def apply_mixture_process(
+        input_c,
+        x2_mean,
+        x2_sd,
+        c2_mean=0,
+        c2_sd=0,
+        log_dist = False) -> ProcessResult:
     """
     calculates the substance concentration after a mixture process of the main stream into a diluting liquid.
     """
@@ -158,13 +164,21 @@ def apply_mixture_process(input_c, x2_mean, x2_sd, c2_mean, c2_sd) -> ProcessRes
     if c2_sd == 0:
         c2_dist = np.array([c2_mean] * n_runs)
     else:
-        c2_dist = truncnorm.rvs(
-            a=(0 - c2_mean) / c2_sd,
-            b=100,  # the upper limit of distribution is 100 * sd of the normal distribution
-            loc=c2_mean,
-            scale=c2_sd,
-            size=n_runs
-        )
+        if log_dist:
+            c2_dist = lognorm.rvs(
+                s=c2_sd,
+                scale=c2_mean,
+                size=n_runs
+            )
+        else:
+            c2_dist = truncnorm.rvs(
+                a=(0 - c2_mean) / c2_sd,
+                b=100,  # the upper limit of distribution is 100 * sd of the normal distribution
+                loc=c2_mean,
+                scale=c2_sd,
+                size=n_runs
+            )
+
 
     output_c = input_c * (1 - x2_dist) + c2_dist * x2_dist
     rmv_factor = (1 - output_c / input_c) * 100

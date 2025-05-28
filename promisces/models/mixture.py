@@ -14,6 +14,7 @@ class Mixture:
     treatment: Treatment
     substance: Substance
     scenario: str
+    log_dist: bool = False
     comments: str = ""
 
     @staticmethod
@@ -40,5 +41,6 @@ class Mixture:
             x2_mean=self.x2_mean,
             x2_sd=self.x2_sd,
             c2_mean=self.c2_mean,
-            c2_sd=self.c2_sd
+            c2_sd=self.c2_sd,
+            log_dist=self.log_dist
         )
