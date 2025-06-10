@@ -1,6 +1,7 @@
 # promisces.hhea
 
 Human Health Exposure Assessment (HHEA) for Project PROMISCES
+project-promisces, #project-H2020-promisces 
 
 ## Installation
 
