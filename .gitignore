@@ -1,4 +1,7 @@
-case_studies
+# User setups for EWEX runs
+assessments/
+
+# User Data for Removal and Startings Concentrations
 data/
 
 # Byte-compiled / optimized / DLL files

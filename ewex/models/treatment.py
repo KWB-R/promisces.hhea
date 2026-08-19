@@ -15,6 +15,7 @@ class TreatmentGroup(Enum):
     DWT = "Drinking Water"
     GWT = "Groundwater"
     WWT = "Wastewater"
+    SWT = "Surface Water"
     NAP = "Natural Process"
     MIX = "Mixing and Separation"
 
